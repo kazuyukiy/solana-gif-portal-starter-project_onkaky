@@ -34,6 +34,17 @@ const App = () => {
 	}
     };
 
+    const connectWallet = async () => {};
+
+    const renderNotConnectedContainer = () => (
+	<button
+	    className="cta-button connect-wallet-button"
+	    onClick={connectWallet}
+	>
+	    Connect to Wallet
+	    </button>
+    );
+
     // Be done only on the first rendering
     // if the secotn parameter is [] (empty) useEffect hook will be called only once
     useEffect(() => {
@@ -49,7 +60,8 @@ const App = () => {
       <div className="container">
         <div className="header-container">
           <p className="header">🖼 GIF Portal</p>
-          <p className="sub-text">View your GIF collection ✨</p>
+            <p className="sub-text">View your GIF collection ✨</p>
+	    {renderNotConnectedContainer()}
         </div>
         <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
