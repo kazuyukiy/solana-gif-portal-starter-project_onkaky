@@ -5,6 +5,12 @@ import './App.css';
 // 定数を宣言します。
 const TWITTER_HANDLE = 'あなたのTwitterハンドル';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
+const TEST_GIFS = [
+    'https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif',
+    'https://media.giphy.com/media/bC9czlgCMtw4cj8RgH/giphy.gif',
+    'https://media.giphy.com/media/kC8N6DPOkbqWTxkNTe/giphy.gif',
+    'https://media.giphy.com/media/26n6Gx9moCgs1pUuk/giphy.gif'
+]
 
 const App = () => {
 
@@ -62,6 +68,18 @@ const App = () => {
 	    </button>
     );
 
+    const renderConnectedContainer = () => (
+	<div className="connected-container">
+	    <div className="gif-grid">
+		{TEST_GIFS.map(gif => (
+		    <div className="gif-item" key={gif}>
+			<img src={gif} alt={gif} />
+		    </div>
+		))}
+	    </div>
+	</div>
+    );
+
     // Be done only on the first rendering
     // if the secotn parameter is [] (empty) useEffect hook will be called only once
     useEffect(() => {
@@ -80,7 +98,10 @@ const App = () => {
             <p className="sub-text">View your GIF collection ✨</p>
 	    {!walletAddress && renderNotConnectedContainer()}
         </div>
-        <div className="footer-container">
+	  <main className="main">
+	      {walletAddress && renderConnectedContainer()}
+	  </main>
+          <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
           <a
             className="footer-text"
