@@ -8,22 +8,31 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
 
+    const [walletAddress, setWalletAddress] = useState(null);
+
     // Check if Phantom Wallet is connected
     const checkIfWalletIsConnected = async () => {
 	try {
+
+	    // console.log('checkIfWalletIsConnected called');
+	    
 	    const { solana } = window;
 
 	    // if (solana && solana.inPhantom){
 	    if (solana){
-		if (solana.inPhantom){
+
+		console.log('solana');
+		
+		if (solana.isPhantom){
 		    console.log('Phantom wallet found!');
 
 		    const response = await solana.connect({ onlyIfTrusted: true});
 		    console.log(
 			'Connected with Public Key:',
-			response.publickKey.toString()
+			response.publicKey.toString()
 		    );
 
+		    setWalletAddress(response.publicKey.toString());
 		}
 		
 	    } else {
@@ -34,7 +43,15 @@ const App = () => {
 	}
     };
 
-    const connectWallet = async () => {};
+    const connectWallet = async () => {
+	const { solana } = window;
+
+	if (solana) {
+	    const response = await solana.connect();
+	    console.log("Connected with Public Key:", response.publicKey.toString());
+	    setWalletAddress(response.publicKey.toString());
+	}
+    };
 
     const renderNotConnectedContainer = () => (
 	<button
@@ -61,7 +78,7 @@ const App = () => {
         <div className="header-container">
           <p className="header">🖼 GIF Portal</p>
             <p className="sub-text">View your GIF collection ✨</p>
-	    {renderNotConnectedContainer()}
+	    {!walletAddress && renderNotConnectedContainer()}
         </div>
         <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
