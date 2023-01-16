@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import twitterLogo from './assets/twitter-logo.svg';
 import './App.css';
 
@@ -9,7 +9,7 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 const App = () => {
 
     // Check if Phantom Wallet is connected
-    const checkIfWaleetIsConnected = async () => {
+    const checkIfWalletIsConnected = async () => {
 	try {
 	    const { solana } = window;
 
