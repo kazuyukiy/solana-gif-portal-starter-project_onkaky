@@ -1,18 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import twitterLogo from './assets/twitter-logo.svg';
 import './App.css';
-
 import idl from './idl.json';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { Program, Provider, web3 } from '@project-serum/anchor';
+import kp from './keypair.json';
+
+// reference to Solana runtime
+// SystemProgram: reference to Solana core program
+// const { SystemProgram, Keypair } = web3;
+const { SystemProgram } = web3;
+
+// keypair to hold gif data
+const arr = Object.values(kp._keypair.secretKey)
+const secret = new Uint8Array(arr)
+let baseAccount = web3.Keypair.fromSecretKey(secret)
+
+// idl.matadata.address: 5see4sEm7i6cZTH1TDdcn9fAKBjBmNeZJRb9fmQFwGog
+const programID = new PublicKey(idl.metadata.address);
+
+// use Devnet
+const network = clusterApiUrl('devnet');
+
+// option when recieve confirmations of transactions
+const opts = { preflightCommitment: "processed" }
 
 // 定数を宣言します。
 const TWITTER_HANDLE = 'あなたのTwitterハンドル';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
-const TEST_GIFS = [
-    'https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif',
-    'https://media.giphy.com/media/bC9czlgCMtw4cj8RgH/giphy.gif',
-    'https://media.giphy.com/media/kC8N6DPOkbqWTxkNTe/giphy.gif',
-    'https://media.giphy.com/media/26n6Gx9moCgs1pUuk/giphy.gif'
-]
+
+// const TEST_GIFS = [
+//     'https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif',
+//     'https://media.giphy.com/media/bC9czlgCMtw4cj8RgH/giphy.gif',
+//     'https://media.giphy.com/media/kC8N6DPOkbqWTxkNTe/giphy.gif',
+//     'https://media.giphy.com/media/26n6Gx9moCgs1pUuk/giphy.gif'
+// ]
 
 const App = () => {
 
@@ -23,12 +45,8 @@ const App = () => {
     // Check if Phantom Wallet is connected
     const checkIfWalletIsConnected = async () => {
 	try {
-
-	    // console.log('checkIfWalletIsConnected called');
-	    
 	    const { solana } = window;
 
-	    // if (solana && solana.inPhantom){
 	    if (solana){
 
 		console.log('solana');
@@ -41,6 +59,8 @@ const App = () => {
 			'Connected with Public Key:',
 			response.publicKey.toString()
 		    );
+		    // Connected with Public Key: 5fndaYDFrJKfPC8cW9sDebUCby1EcxF3V6pmeNFbVYvu
+		    // Phantom wallet address
 
 		    setWalletAddress(response.publicKey.toString());
 		}
@@ -68,13 +88,74 @@ const App = () => {
 	setInputValue(value);
     };
 
+    const getProvider = () => {
+	const connection = new Connection(network, opts.preflightCommitment);
+	const provider = new Provider(
+	    connection, window.solana, opts.preflightCommitment,
+	);
+	return provider;
+    }
+    
+    const createGifAccount = async () => {
+	try {
+	    const provider = getProvider();
+	    const program = new Program(idl, programID, provider);
+	    console.log("ping");
+
+	    // DBG
+	    // console.log("ping Id");
+	    // console.log("ping ID");
+	    
+	    await program.rpc.startStuffOff({
+		accounts: {
+		    baseAccount: baseAccount.publicKey,
+		    user: provider.wallet.publicKey,
+		    systemProgram: SystemProgram.programId,
+		    // Seems programId is correct
+		    // Since it makes open wallet extension
+		    // But with programID,
+		    // it causes an eror without opening wallet extension
+		    // systemProgram: SystemProgram.programID,
+		},
+		signers: [baseAccount]
+	    });
+	    console.log("Created a new BaseAccount w/ address:", baseAccount.publicKey.toString())
+	    await getGifList();
+	    
+	} catch (error) {
+
+	    // DBG
+	    // console.log("Error creating BaseAccount Id:")
+	    // console.log("Error creating BaseAccount ID:")
+	    
+	    console.log("Error creating BaseAccount account:", error)
+	}
+    }
+
     const sendGif = async () => {
-	if (inputValue.length > 0) {
-	    console.log('Gif link:', inputValue);
-	    setGifList([...gifList, inputValue]);
-	    setInputValue('');
-	} else {
-	    console.log('Emply input. Try again.');
+	if (inputValue.length === 0) {
+	    console.log("No gif link given!")
+	    return
+	}
+
+	setInputValue('');
+	console.log('Gif link:', inputValue);
+
+	try {
+	    const provider = getProvider();
+	    const program = new Program(idl, programID, provider);
+
+	    await program.rpc.addGif(inputValue, {
+		accounts: {
+		    baseAccount: baseAccount.publicKey,
+		    user: provider.wallet.publicKey,
+		},
+	    });
+	    console.log("Gif successfully send to program", inputValue)
+
+	    await getGifList();
+	} catch (error) {
+	    console.log("Error sending GIF:", error)
 	}
     };
 
@@ -87,35 +168,56 @@ const App = () => {
 	    </button>
     );
 
-    const renderConnectedContainer = () => (
-	<div className="connected-container">
-	    <form
-		onSubmit={(event) => {
-		    event.preventDefault();
-		    sendGif();
-		}}
-	    >
-		<input
-		    type="text"
-		    placeholder="Enter gif link!"
-		    value={inputValue}
-		    onChange={onInputChange}
-		/>
-		<button type="submit" className="cta-button submit-gif-button">Submit</button>
-	    </form>
-	    <div className="gif-grid">
-		{gifList.map(gif => (
-		    <div className="gif-item" key={gif}>
-			<img src={gif} alt={gif} />
-		    </div>
-		))}
-	    </div>
-	</div>
-    );
+    const renderConnectedContainer = () => {
+	// program account not initialized
+	if (gifList === null) {
+	    return (
+		<div className="connected-container">
+		    <button type="submit" className="cta-button submit-gif-button" onClick={createGifAccount}>
+			Do One-Time Initialization For GIF Program Account
+		    </button>
+		</div>
+	    )
+	}
 
+	// program account valid so can submit GIF
+	else {
+	    return (
+		<div className="connected-container">
+
+		    <form
+			onSubmit={(event) => {
+			    event.preventDefault();
+			    sendGif();
+			}}
+		    >
+			<input
+			    type="text"
+			    placeholder="Enter gif link!"
+			    value={inputValue}
+			    onChange={onInputChange}
+			/>
+			<button type="submit" className="cta-button submit-gif-button">Submit</button>
+		    </form>
+		    <div className="gif-grid">
+			{gifList.map((item, index) => (
+			    <div className="gif-item" key={index}>
+				<img src={item.gifLink} />
+				</div>
+			))}
+		    </div>
+		</div>
+	    )
+	}
+    }
+    
     // Be done only on the first rendering
     // if the secotn parameter is [] (empty) useEffect hook will be called only once
     useEffect(() => {
+	
+	// DBG
+	// console.log("useEffect onload")
+	
 	const onLoad = async () => {
 	    await checkIfWalletIsConnected();
 	};
@@ -123,11 +225,38 @@ const App = () => {
 	return () => window.removeEventListener('load', onLoad);
     }, []);
 
+    const getGifList = async() => {
+	try {
+	    const provider = getProvider();
+	    const program = new Program(idl, programID, provider);
+
+	    // DBG
+	    // console.log("getGifList gifList.length:", gifList.length);
+	    // console.log("getGifList publicKey:", baseAccount.publicKey.toString());
+	    // console.log("getGifList fetch account");
+	    
+
+	    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+
+	    console.log("Got the account", account)
+	    setGifList(account.gifList)
+	    
+	} catch (error) {
+	    console.log("Error in getGifList: ", error)
+	    setGifList(null);
+	}
+    }
+
     useEffect(() => {
+
+	// DBG
+	// console.log("useEffect getGifList")
+	
 	if (walletAddress) {
 	    console.log('Fetching GIF list...');
-
-	    setGifList(TEST_GIFS);
+	    // DBG
+	    // console.log('calling getGifList');
+	    getGifList()
 	}
     }, [walletAddress]);
     
