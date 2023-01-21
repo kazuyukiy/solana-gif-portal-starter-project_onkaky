@@ -177,7 +177,7 @@ const App = () => {
 	else {
 	    return (
 		<div className="connected-container">
-
+		    {renderCurrentWalletAddress()}
 		    <form
 			onSubmit={(event) => {
 			    event.preventDefault();
@@ -202,6 +202,16 @@ const App = () => {
 		</div>
 	    )
 	}
+    }
+
+    const renderCurrentWalletAddress = () => {
+	return (
+	    <div className="connected-container">
+		<span>
+		    Your Wallet Address:{walletAddress}
+		</span>
+	    </div>
+	)
     }
     
     // Be done only on the first rendering
