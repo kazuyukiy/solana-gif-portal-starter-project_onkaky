@@ -6,6 +6,9 @@ import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import kp from './keypair.json';
 
+// require('dotenv').config({ debug: true });
+require('dotenv').config();
+
 // reference to Solana runtime
 // SystemProgram: reference to Solana core program
 // const { SystemProgram, Keypair } = web3;
@@ -16,11 +19,12 @@ const arr = Object.values(kp._keypair.secretKey)
 const secret = new Uint8Array(arr)
 let baseAccount = web3.Keypair.fromSecretKey(secret)
 
-// idl.matadata.address: 5see4sEm7i6cZTH1TDdcn9fAKBjBmNeZJRb9fmQFwGog
 const programID = new PublicKey(idl.metadata.address);
 
 // use Devnet
-const network = clusterApiUrl('devnet');
+// const network = clusterApiUrl('devnet');
+// console.log("SOLANA_NETWORK:",process.env.REACT_APP_SOLANA_NETWORK);
+const network = clusterApiUrl(process.env.REACT_APP_SOLANA_NETWORK);
 
 // option when recieve confirmations of transactions
 const opts = { preflightCommitment: "processed" }
@@ -59,9 +63,7 @@ const App = () => {
 			'Connected with Public Key:',
 			response.publicKey.toString()
 		    );
-		    // Connected with Public Key: 5fndaYDFrJKfPC8cW9sDebUCby1EcxF3V6pmeNFbVYvu
 		    // Phantom wallet address
-
 		    setWalletAddress(response.publicKey.toString());
 		}
 		
@@ -102,10 +104,6 @@ const App = () => {
 	    const program = new Program(idl, programID, provider);
 	    console.log("ping");
 
-	    // DBG
-	    // console.log("ping Id");
-	    // console.log("ping ID");
-	    
 	    await program.rpc.startStuffOff({
 		accounts: {
 		    baseAccount: baseAccount.publicKey,
@@ -123,11 +121,6 @@ const App = () => {
 	    await getGifList();
 	    
 	} catch (error) {
-
-	    // DBG
-	    // console.log("Error creating BaseAccount Id:")
-	    // console.log("Error creating BaseAccount ID:")
-	    
 	    console.log("Error creating BaseAccount account:", error)
 	}
     }
@@ -214,10 +207,6 @@ const App = () => {
     // Be done only on the first rendering
     // if the secotn parameter is [] (empty) useEffect hook will be called only once
     useEffect(() => {
-	
-	// DBG
-	// console.log("useEffect onload")
-	
 	const onLoad = async () => {
 	    await checkIfWalletIsConnected();
 	};
@@ -229,13 +218,6 @@ const App = () => {
 	try {
 	    const provider = getProvider();
 	    const program = new Program(idl, programID, provider);
-
-	    // DBG
-	    // console.log("getGifList gifList.length:", gifList.length);
-	    // console.log("getGifList publicKey:", baseAccount.publicKey.toString());
-	    // console.log("getGifList fetch account");
-	    
-
 	    const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
 
 	    console.log("Got the account", account)
@@ -248,14 +230,8 @@ const App = () => {
     }
 
     useEffect(() => {
-
-	// DBG
-	// console.log("useEffect getGifList")
-	
 	if (walletAddress) {
 	    console.log('Fetching GIF list...');
-	    // DBG
-	    // console.log('calling getGifList');
 	    getGifList()
 	}
     }, [walletAddress]);
